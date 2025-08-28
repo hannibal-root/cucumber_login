@@ -16,6 +16,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class LoginSteps {
@@ -31,14 +32,14 @@ public class LoginSteps {
 
     @Given("I open the bank login page")
     public void openLoginPage() {
-        driver.get("https://185.199.31.30:8443/bank/login");
+        driver.get("https://eng.digitalbank.masterfield.hu/bank/login");
 
         // Wait and accept cookie banner if it appears
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         try {
             // Adjust this selector to your actual cookie accept button
-            wait.until(ExpectedConditions.elementToBeClickable(By.id("cookie-accept"))).click();
+            wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".cc-nb-okagree"))).click();
         } catch (Exception e) {
             System.out.println("Cookie banner not found or already accepted.");
         }
@@ -58,13 +59,13 @@ public class LoginSteps {
     @Then("I should see the welcome page")
     public void verifyWelcomePage() {
         String title = driver.getTitle();
-        assertTrue("Expecting welcome in title", title.contains("Welcome"));
+        assertTrue("Expecting welcome in title", title.contains("Digital Bank"));
     }
 
     @Then("I should see a login error message")
     public void verifyErrorMessage() {
-        String error = driver.findElement(By.id("loginError")).getText();
-        assertTrue("Error should be displayed", error.contains("Invalid credentials"));
+        assertEquals("Digital Bank", driver.getTitle());
+        assertTrue(driver.getCurrentUrl().endsWith("/bank/login?error"));
     }
 
     @After

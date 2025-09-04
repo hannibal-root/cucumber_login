@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Jenkins Gyakorlatok</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        body {
+          background-color: #2d2d2d;
+          color: #ccc;
+          font-family: 'Fira Code', monospace;
+          padding: 2rem;
+        }
+        h2 {
+          color: #ffd866;
+          border-bottom: 1px solid #444;
+          padding-bottom: 0.3rem;
+        }
+        pre {
+          border-radius: 5px;
+          margin-bottom: 2rem;
+          overflow-x: auto;
+        }
+        code {
+          font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Jenkins Gyakorlatok – Jenkinsfile példák</h1>
+
+<!-- Példa szekciók -->
+
+<h2>01 - Hello World</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Hello') {
+            steps {
+                echo 'Hello Jenkins!'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>02 - Git klónozás</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Clone Repo') {
+            steps {
+                git 'https://github.com/git/git.git'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>03 - Build script futtatása</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Run Script') {
+            steps {
+                sh './build.sh'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>04 - Több stage</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Clone') {
+            steps {
+                git 'https://github.com/git/git.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'make'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'make test'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>05 - Email értesítés hiba esetén</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Failing Step') {
+            steps {
+                sh 'exit 1'
+            }
+        }
+    }
+    post {
+        failure {
+            mail to: 'admin@example.com',
+                 subject: "Jenkins Build Failed",
+                 body: "Build ${env.BUILD_NUMBER} failed."
+        }
+    }
+}</code></pre>
+
+<h2>06 - Tesztek futtatása</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Run Tests') {
+            steps {
+                sh 'pytest tests/'
+            }
+        }
+    }
+    post {
+        always {
+            junit 'tests/results.xml'
+        }
+    }
+}</code></pre>
+
+<h2>07 - Környezeti változók</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    environment {
+        BUILD_ENV = 'dev'
+    }
+    stages {
+        stage('Check Env') {
+            steps {
+                script {
+                    if (env.BUILD_ENV == 'dev') {
+                        echo 'Development build'
+                    } else {
+                        echo 'Other environment'
+                    }
+                }
+            }
+        }
+    }
+}</code></pre>
+
+<h2>08 - Paraméterezett build</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    parameters {
+        choice(name: 'ENV', choices: ['dev', 'stage', 'prod'], description: 'Choose environment')
+    }
+    stages {
+        stage('Selected Env') {
+            steps {
+                echo "Selected: ${params.ENV}"
+            }
+        }
+    }
+}</code></pre>
+
+<h2>09 - Külső fájl betöltése</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Run External Script') {
+            steps {
+                sh 'chmod +x scripts/deploy.sh && scripts/deploy.sh'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>10 - Timeout beállítása</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Timeout Test') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    sh 'sleep 300'
+                }
+            }
+        }
+    }
+}</code></pre>
+
+<h2>11 - Docker image build</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t myapp:latest .'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>12 - Docker push</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+    }
+    stages {
+        stage('Push Docker Image') {
+            steps {
+                sh '''
+                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
+                    docker tag myapp:latest mydockerhubuser/myapp:latest
+                    docker push mydockerhubuser/myapp:latest
+                '''
+            }
+        }
+    }
+}</code></pre>
+
+<h2>13 - Docker konténer futtatása</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Run Container') {
+            steps {
+                sh 'docker run --rm myapp:latest'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>14 - Docker agent pipeline-hoz</h2>
+<pre><code class="language-groovy">pipeline {
+    agent {
+        docker {
+            image 'python:3.9'
+        }
+    }
+    stages {
+        stage('Run Python') {
+            steps {
+                sh 'python --version'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>15 - Tesztelés több image-zel</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Build with Node') {
+            agent {
+                docker { image 'node:14' }
+            }
+            steps {
+                sh 'node -v'
+            }
+        }
+        stage('Build with Go') {
+            agent {
+                docker { image 'golang:1.16' }
+            }
+            steps {
+                sh 'go version'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>16 - Parallel stage használata</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Parallel Tests') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        sh 'pytest tests/unit'
+                    }
+                }
+                stage('Integration Tests') {
+                    steps {
+                        sh 'pytest tests/integration'
+                    }
+                }
+            }
+        }
+    }
+}</code></pre>
+
+<h2>17 - API hívás webhookkal</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Call Webhook') {
+            steps {
+                sh 'curl -X POST -H "Content-Type: application/json" -d \'{"text":"Build Done"}\' https://discord.com/api/webhooks/xxx'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>18 - Jenkinsfile külön repóból</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Load Jenkinsfile') {
+            steps {
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/user/jenkinsfiles.git']]
+                ])
+                load 'shared/Jenkinsfile'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>19 - Deploy staging környezetbe</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Deploy to Staging') {
+            steps {
+                sh 'scp -r . user@staging-server:/var/www/myapp'
+            }
+        }
+    }
+}</code></pre>
+
+<h2>20 - Pipeline adott branch esetén</h2>
+<pre><code class="language-groovy">pipeline {
+    agent any
+    stages {
+        stage('Run on Main or Dev') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
+            }
+            steps {
+                echo "Running on ${env.BRANCH_NAME}"
+            }
+        }
+    }
+}</code></pre>
+
+<!-- Prism.js kódszínezés betöltése -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-groovy.min.js"></script>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    tools { maven 'Maven 3.8+' } // vagy Maven név, amit Jenkinsben beállítottál
+    tools { maven 'maven' } // vagy Maven név, amit Jenkinsben beállítottál
     stages {
         stage('Checkout') {
             steps {
